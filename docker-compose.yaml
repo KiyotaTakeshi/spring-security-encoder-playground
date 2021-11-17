@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  mysql:
+    image: mysql:8.0.23
+    container_name: password-encoder-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "2wsxzaq1"
+      MYSQL_DATABASE: password-encoder
+      MYSQL_USER: password-encoder
+      MYSQL_PASSWORD: "1qazxsw2"
+      TZ: 'Asia/Tokyo'
+    volumes:
+      - .docker/db/data:/var/lib/mysql
+      - .docker/db/my.cnf:/etc/mysql/conf.d/my.cnf
+    ports:
+      - 3306:3306

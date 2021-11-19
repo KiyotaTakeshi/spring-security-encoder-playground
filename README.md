@@ -10,8 +10,31 @@ NAME                     COMMAND                  SERVICE             STATUS    
 password-encoder-mysql   "docker-entrypoint.s…"   mysql               running             0.0.0.0:3306->3306/tcp
 ```
 
-TODO: 動作確認方法を追記
+---
+## [プレゼンテーション資料](./presentation-material/README.md)
 
+- [Slidev](https://github.com/slidevjs/slidev) を使用
+
+---
+## 動作確認方法
+
+```shell
+$ export JAVA_HOME=`/usr/libexec/java_home -v 11`
+
+$ java -version                                  
+openjdk version "11.0.11" 2021-04-20 LTS
+OpenJDK Runtime Environment Corretto-11.0.11.9.1 (build 11.0.11+9-LTS)
+OpenJDK 64-Bit Server VM Corretto-11.0.11.9.1 (build 11.0.11+9-LTS, mixed mode)
+
+# @see https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/#running-your-application
+$ ./gradlew bootRun
+
+# or make executable jar
+# $ ./gradlew clean build
+# $ java -jar build/libs/spring-security-encoder-playground-0.0.1-SNAPSHOT.jar
+```
+
+---
 ## row password と salt をもとにハッシュ化されている
 
 ```java
@@ -92,11 +115,13 @@ private String getSalt() {
 
 - 同じ salt を使えば同じエンコード結果(ハッシュ値)になることは [テストコードにて確認済み](./src/test/kotlin/com/kiyotakeshi/springsecurityencoderplayground/PasswordEncodingTest.kt)
 
-TODO: もうちょいちゃんと書く
 ### ログイン時にパスワードを検証する流れ
+
+- DB や memory からユーザ情報を取得
 
 ```java
 // org/springframework/security/authentication/dao/DaoAuthenticationProvider.java
+
 		try {
                 UserDetails loadedUser = this.getUserDetailsService().loadUserByUsername(username);
                 if (loadedUser == null) {
@@ -106,6 +131,8 @@ TODO: もうちょいちゃんと書く
                 return loadedUser;
                 }
 ```
+
+- リクエストから受け取ったパスワードと取得したユーザのパスワードを比較
 
 ```java
 if (!this.passwordEncoder.matches(presentedPassword, userDetails.getPassword())) {
@@ -120,7 +147,11 @@ if (!this.passwordEncoder.matches(presentedPassword, userDetails.getPassword()))
 // userDetails.getPassword(): $2a$10$BYNYHWPZQzWyPAZRwLuzSO1UPTE2jTdziYjoHw8gRjn95t7zf2fs6
 // this.passwordEncoder: BCryptPasswordEncoder@13893
 if (!this.passwordEncoder.matches(presentedPassword, userDetails.getPassword())) {
+```
 
+- **リクエストをハッシュ化した値と保存されているハッシュ化された値を比較している**
+
+```
 // つまりは！
 // BCryptPasswordEncoder.matches("1qazxsw2", "$2a$10$BYNYHWPZQzWyPAZRwLuzSO1UPTE2jTdziYjoHw8gRjn95t7zf2fs6")
 ```
@@ -134,6 +165,8 @@ if (!this.passwordEncoder.matches(presentedPassword, userDetails.getPassword()))
 // org/springframework/security/crypto/bcrypt/BCrypt.java
 		return hashpw(passwordb, salt);
 ```
+
+- **保存されているハッシュから round と salt を取り出して** リクエストの値をハッシュ化して比較
 
 ```java
 // org/springframework/security/crypto/bcrypt/BCrypt.java
